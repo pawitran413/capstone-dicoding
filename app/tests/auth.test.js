@@ -1,7 +1,24 @@
 const request = require("supertest");
-const app = require("../server");
+const mongoose = require("mongoose");
+
+// Import app setelah setup test environment
+process.env.NODE_ENV = "test";
+process.env.DB_URI = "mongodb://127.0.0.1:27017/auth_service_test";
+
+const app = require("../../server");
 
 describe("Auth API Tests", () => {
+  beforeAll(async () => {
+    // Tunggu koneksi database
+    await new Promise(resolve => setTimeout(resolve, 2000));
+  });
+
+  afterAll(async () => {
+    // Cleanup database dan tutup koneksi
+    await mongoose.connection.dropDatabase();
+    await mongoose.connection.close();
+  });
+
   it("should register a new user", async () => {
     const res = await request(app).post("/api/auth/signup").send({
       username: "testuser",
@@ -14,9 +31,17 @@ describe("Auth API Tests", () => {
   });
 
   it("should not register with duplicate username", async () => {
+    // First register a user
+    await request(app).post("/api/auth/signup").send({
+      username: "duplicateuser",
+      email: "duplicate@example.com",
+      password: "password123",
+    });
+
+    // Try to register with same username
     const res = await request(app).post("/api/auth/signup").send({
-      username: "admin",
-      email: "newadmin@example.com",
+      username: "duplicateuser",
+      email: "newduplicate@example.com",
       password: "newpassword",
     });
 
@@ -25,9 +50,17 @@ describe("Auth API Tests", () => {
   });
 
   it("should login successfully", async () => {
+    // First register a user
+    await request(app).post("/api/auth/signup").send({
+      username: "loginuser",
+      email: "login@example.com",
+      password: "password123",
+    });
+
+    // Then try to login
     const res = await request(app).post("/api/auth/signin").send({
-      username: "admin",
-      password: "adminpassword",
+      username: "loginuser",
+      password: "password123",
     });
 
     expect(res.statusCode).toBe(200);
