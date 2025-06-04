@@ -1,7 +1,7 @@
 {
   "name": "capstone-dicoding",
   "version": "1.0.0",
-  "description": "Authentication & Authorization API with Node.js, Express, and MongoDB",
+  "description": "Authentication & Authorization API with Plant Disease Prediction",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -22,7 +22,11 @@
     "bcryptjs": "^2.4.3",
     "express-rate-limit": "^6.10.0",
     "swagger-ui-express": "^5.0.0",
-    "winston": "^3.10.0"
+    "winston": "^3.10.0",
+    "@tensorflow/tfjs-node": "^4.10.0",
+    "multer": "^1.4.5-lts.1",
+    "sharp": "^0.32.6",
+    "uuid": "^9.0.1"
   },
   "devDependencies": {
     "jest": "^29.6.2",
