@@ -3,43 +3,60 @@ const Role = require("../models/role.model");
 const User = require("../models/user.model");
 const bcrypt = require("bcryptjs");
 
+// Load environment variables
+require("dotenv").config();
+
 const seedDatabase = async () => {
   try {
-    await mongoose.connect(process.env.DB_URI, {
+    const dbUri = process.env.DB_URI || "mongodb://127.0.0.1:27017/auth_service";
+    
+    await mongoose.connect(dbUri, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
     });
 
     console.log("Connected to the database!");
 
+    // Clear existing data (optional)
+    await Role.deleteMany({});
+    await User.deleteMany({});
+    console.log("Cleared existing data.");
+
     // Seed roles
     const roles = ["user", "admin", "moderator"];
+    const createdRoles = {};
+    
     for (let roleName of roles) {
-      const existingRole = await Role.findOne({ name: roleName });
-      if (!existingRole) {
-        await new Role({ name: roleName }).save();
-        console.log(`Role '${roleName}' added.`);
-      }
+      const role = await new Role({ name: roleName }).save();
+      createdRoles[roleName] = role;
+      console.log(`Role '${roleName}' added.`);
     }
 
     // Seed admin user
-    const adminUser = await User.findOne({ username: "admin" });
-    if (!adminUser) {
-      const password = bcrypt.hashSync("adminpassword", 8);
-      const user = new User({
-        username: "admin",
-        email: "admin@example.com",
-        password,
-      });
+    const password = bcrypt.hashSync("adminpassword", 8);
+    const adminUser = new User({
+      username: "admin",
+      email: "admin@example.com",
+      password,
+      roles: [createdRoles.admin._id]
+    });
 
-      const adminRole = await Role.findOne({ name: "admin" });
-      user.roles = [adminRole._id];
-      await user.save();
+    await adminUser.save();
+    console.log("Admin user added: username 'admin', password 'adminpassword'.");
 
-      console.log("Admin user added: username 'admin', password 'adminpassword'.");
-    }
+    // Seed regular user
+    const userPassword = bcrypt.hashSync("userpassword", 8);
+    const regularUser = new User({
+      username: "user",
+      email: "user@example.com",
+      password: userPassword,
+      roles: [createdRoles.user._id]
+    });
 
-    mongoose.disconnect();
+    await regularUser.save();
+    console.log("Regular user added: username 'user', password 'userpassword'.");
+
+    await mongoose.disconnect();
     console.log("Seeding completed. Disconnected from the database.");
   } catch (error) {
     console.error("Error seeding the database:", error);
