@@ -5,6 +5,7 @@ const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
 const mongoose = require("mongoose");
+const path = require("path");
 const { limiter } = require("./app/utils/rateLimiter");
 const swaggerUi = require("swagger-ui-express");
 const swaggerConfig = require("./app/config/swagger.config");
@@ -36,14 +37,26 @@ app.use(express.urlencoded({ extended: true }));
 app.use(morgan("combined"));
 app.use(limiter);
 
+// Serve uploaded images statically
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 // Routes
 require("./app/routes/auth.routes")(app);
 require("./app/routes/user.routes")(app);
+require("./app/routes/prediction.routes")(app); // Tambah routes prediksi
 app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(swaggerConfig));
 
 // Default route
 app.get("/", (req, res) => {
-  res.json({ message: "Auth API is running!" });
+  res.json({ 
+    message: "Plant Disease Prediction API is running!",
+    endpoints: {
+      auth: "/api/auth/*",
+      prediction: "/api/predict",
+      history: "/api/predictions/history",
+      docs: "/api/docs"
+    }
+  });
 });
 
 // Error handling middleware
@@ -55,6 +68,7 @@ const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`API Documentation available at http://localhost:${PORT}/api/docs`);
+  console.log(`Prediction endpoint: http://localhost:${PORT}/api/predict`);
 });
 
 module.exports = app;
