@@ -1,3 +1,3 @@
 module.exports = {
-    secret : "Satria-secret-key"
+  secret: process.env.JWT_SECRET || "Satria-secret-key"
 };
